@@ -28,6 +28,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     
     'api',
+    'drf_yasg',
     'rest_framework'
 ]
 
@@ -46,8 +47,8 @@ ROOT_URLCONF = 'core.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': ['template'],
-        'APP_DIRS': True,
+        'DIRS': [],
+        'APP_DIRS': True,  # Убедитесь, что APP_DIRS установлено в True
         'OPTIONS': {
             'context_processors': [
                 'django.template.context_processors.debug',
@@ -58,6 +59,8 @@ TEMPLATES = [
         },
     },
 ]
+
+
 
 WSGI_APPLICATION = 'core.wsgi.application'
 
