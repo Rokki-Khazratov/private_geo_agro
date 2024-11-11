@@ -17,9 +17,9 @@ class PlantationImageAdmin(admin.StackedInline):
 
 
 class PlantationAdmin(admin.ModelAdmin):
-    list_display = ('id', 'name', 'district', 'status', 'established_date')
+    list_display = ('id', 'name', 'district', 'status', 'is_checked')
     search_fields = ('name', 'district__name')
-    list_filter = ('district', 'status')
+    list_filter = ('district', 'status',"is_checked")
     inlines = [PlantationCoordinatesInline, PlantationImageAdmin]  # Добавляем инлайн для изображений
 
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
