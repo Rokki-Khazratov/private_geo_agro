@@ -1,4 +1,5 @@
 from django.db import models
+from django.utils import timezone  
 from django.contrib.auth.models import User
 
 # UTILS 
@@ -27,6 +28,7 @@ class Fruits(models.Model):
     def __str__(self):
         return self.name
 
+
 class Plantation(models.Model):
     PLANTATION_TYPE = (
         (1, "Uzumzorlar"),
@@ -47,9 +49,18 @@ class Plantation(models.Model):
     )
     established_date = models.DateField()
     is_checked = models.BooleanField(default=False)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def save(self, *args, **kwargs):
+        # Сбрасываем is_checked на False при любом изменении
+        if not self.id or self.is_checked == False:
+            self.is_checked = False
+        super(Plantation, self).save(*args, **kwargs)
 
     def __str__(self):
         return f"Plantation {self.id}"
+
+
 
 
 class PlantationImage(models.Model):

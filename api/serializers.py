@@ -45,22 +45,38 @@ class PlantationCoordinatesSerializer(serializers.ModelSerializer):
         model = PlantationCoordinates
         fields = ['id', 'plantation', 'latitude', 'longitude']
 
-class PlantationSerializer(serializers.ModelSerializer):
-    district = DistrictSerializer()
-    fruit_type = FruitsSerializer(many=True)
-    coordinates = PlantationCoordinatesSerializer(many=True)
-    plantation_type = serializers.CharField(source='get_plantation_type_display')  # Получаем текстовое значение из choice
+from rest_framework import serializers
+from .models import Plantation
+from django.contrib.auth.models import User
 
-    # Новый метод для сериализации изображений в виде списка URL
-    images = serializers.SerializerMethodField()
+class PlantationSerializer(serializers.ModelSerializer):
+    district = serializers.SerializerMethodField()  # Для преобразования district
+    fruit_type = FruitsSerializer(many=True)
+    coordinates = serializers.SerializerMethodField()  # Для преобразования coordinates
+    plantation_type = serializers.CharField(source='get_plantation_type_display')  # Получаем текстовое значение из choice
+    images = serializers.SerializerMethodField()  # Для преобразования images
 
     class Meta:
         model = Plantation
         fields = ['id', 'name', 'inn', 'district', 'plantation_type',
                   'fruit_type', 'status', 'established_date', 'is_checked', 'coordinates', 'images']
 
+    # Метод для преобразования district
+    def get_district(self, obj):
+        return {
+            'name': obj.district.name,
+            'region': obj.district.region.name
+        }
+
+    # Метод для преобразования coordinates
+    def get_coordinates(self, obj):
+        return [{'latitude': coord.latitude, 'longitude': coord.longitude} for coord in obj.coordinates.all()]
+
+    # Метод для преобразования images
     def get_images(self, obj):
-        # Возвращаем список URL изображений
         return [f"{BASE_URL}{image.image.url}" for image in obj.images.all()]
+
+
+
 
 
