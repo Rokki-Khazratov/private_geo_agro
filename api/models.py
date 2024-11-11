@@ -51,6 +51,15 @@ class Plantation(models.Model):
     def __str__(self):
         return f"Plantation {self.id}"
 
+
+class PlantationImage(models.Model):
+    plantation = models.ForeignKey(Plantation, on_delete=models.CASCADE, related_name='images')
+    image = models.ImageField(upload_to='plantation_images/') 
+
+    def __str__(self):
+        return f"Image for Plantation {self.plantation.name}"
+
+
 class PlantationCoordinates(models.Model):
     plantation = models.ForeignKey(Plantation, related_name='coordinates', on_delete=models.CASCADE)
     latitude = models.FloatField()
@@ -69,3 +78,4 @@ class CustomUser(User):
 
     def __str__(self):
         return self.username
+    

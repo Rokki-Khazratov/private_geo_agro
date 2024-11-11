@@ -1,16 +1,26 @@
 from django.contrib import admin
-from .models import CustomUser, Plantation, PlantationCoordinates, Region, District, Fruits
+from .models import CustomUser, Plantation, PlantationCoordinates, PlantationImage, Region, District, Fruits
 
 # Inline admin for PlantationCoordinates
 class PlantationCoordinatesInline(admin.StackedInline):
     model = PlantationCoordinates
     extra = 1  # Количество пустых полей для добавления координат
 
+class CustomUserAdmin(admin.ModelAdmin):
+    list_display = ('username', 'email', 'is_staff')
+    search_fields = ('username', 'email')
+    filter_horizontal = ('districts',)
+
+class PlantationImageAdmin(admin.StackedInline):
+    model = PlantationImage
+    extra = 1  # Количество пустых полей для добавления изображений
+
+
 class PlantationAdmin(admin.ModelAdmin):
     list_display = ('id', 'name', 'district', 'status', 'established_date')
     search_fields = ('name', 'district__name')
     list_filter = ('district', 'status')
-    inlines = [PlantationCoordinatesInline]  # Добавьте инлайн для координат
+    inlines = [PlantationCoordinatesInline, PlantationImageAdmin]  # Добавляем инлайн для изображений
 
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
         if db_field.name == "district":
@@ -29,15 +39,26 @@ class PlantationAdmin(admin.ModelAdmin):
         # Ограничиваем видимость плантаций по округам
         return qs.filter(district__users=request.user)
 
+@admin.register(PlantationImage)
+class PlantationImageAdmin(admin.ModelAdmin):
+    list_display = ['image', 'plantation']  # Отображаем изображение и связанный объект плантации
 
-class CustomUserAdmin(admin.ModelAdmin):
-    list_display = ('username', 'email', 'is_staff')
-    search_fields = ('username', 'email')
-    filter_horizontal = ('districts',)
+
+
 
 class PlantationCoordinatesAdmin(admin.ModelAdmin):
-    list_display = ('plantation', 'latitude', 'longitude')
-    search_fields = ('plantation__id',)
+    list_display = ('id', 'plantation', 'latitude', 'longitude')
+
+    def get_model_perms(self, request):
+        """
+        Это исключает модель из меню админки для суперпользователей.
+        """
+        if request.user.is_superuser:
+            return {}
+        return super().get_model_perms(request)
+
+
+
 
 class RegionAdmin(admin.ModelAdmin):
     list_display = ('name',)
