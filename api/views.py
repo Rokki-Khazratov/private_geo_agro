@@ -10,6 +10,8 @@ from .models import *
 from .serializers import *
 
 
+class CustomTokenObtainPairView(TokenObtainPairView):
+    serializer_class = CustomTokenObtainPairSerializer
 
 class UserListAPIView(generics.ListAPIView):
     queryset = CustomUser.objects.all()
@@ -80,6 +82,11 @@ class PlantationCoordinatesListCreateAPIView(generics.ListCreateAPIView):
 
 
 
+class PlantationFruitAreaListCreateAPIView(generics.ListCreateAPIView):
+    queryset = PlantationFruitArea.objects.all()
+    serializer_class = PlantationFruitAreaSerializer
 
-class CustomTokenObtainPairView(TokenObtainPairView):
-    serializer_class = CustomTokenObtainPairSerializer
+    def perform_create(self, serializer):
+        # Получаем данные о площади для фруктов
+        plantation = self.kwargs['plantation_id']  # Получаем ID плантации из URL
+        serializer.save(plantation=plantation)

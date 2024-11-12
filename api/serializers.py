@@ -121,42 +121,48 @@ class PlantationCoordinatesSerializer(serializers.ModelSerializer):
 
 
 
+class PlantationFruitAreaSerializer(serializers.ModelSerializer):
+    fruit = FruitsSerializer()  # Сериализуем фрукт
+    area = serializers.FloatField()  # Площадь фрукта
+
+    class Meta:
+        model = PlantationFruitArea
+        fields = ['fruit', 'area']
+
 class PlantationSerializer(serializers.ModelSerializer):
-    district = serializers.SerializerMethodField()  # Для преобразования district
-    fruit_type = FruitsSerializer(many=True)
-    coordinates = serializers.SerializerMethodField()  # Для преобразования coordinates
-    plantation_type = serializers.CharField(source='get_plantation_type_display')  # Получаем текстовое значение из choice
-    images = serializers.SerializerMethodField()  # Для преобразования images
-    updated_at = serializers.SerializerMethodField()  # Для преобразования updated_at в date и time
+    district = serializers.SerializerMethodField()  
+    coordinates = serializers.SerializerMethodField()  
+    fruit_areas = serializers.SerializerMethodField()  
+    plantation_type = serializers.CharField(source='get_plantation_type_display')  
+    images = serializers.SerializerMethodField()  
+    updated_at = serializers.SerializerMethodField()  
 
     class Meta:
         model = Plantation
-        fields = ['id', 'name', 'inn', 'district', 'plantation_type',
-                  'fruit_type', 'status', 'established_date', 'is_checked', 'updated_at', 'coordinates', 'images']
+        fields = ['id', 'name', 'inn', 'district', 'plantation_type', 'status', 
+                  'established_date', 'is_checked', 'updated_at', 'coordinates', 
+                  'images', 'fruit_areas']
 
-    # Метод для преобразования district
     def get_district(self, obj):
         return {
             'name': obj.district.name,
             'region': obj.district.region.name
         }
 
-    # Метод для преобразования coordinates
     def get_coordinates(self, obj):
         return [{'latitude': coord.latitude, 'longitude': coord.longitude} for coord in obj.coordinates.all()]
 
-    # Метод для преобразования images
+    def get_fruit_areas(self, obj):
+        # Получаем площади фруктов через связь PlantationFruitArea
+        return [{'fruit': fruit.fruit.name, 'area': fruit.area} for fruit in obj.fruit_area.all()]
+
     def get_images(self, obj):
         return [f"{BASE_URL}{image.image.url}" for image in obj.images.all()]
 
-    # Метод для преобразования updated_at в date и time
     def get_updated_at(self, obj):
-        # Учитываем часовой пояс Ташкента (+5)
         tz = timezone.get_fixed_timezone(5 * 60)  # Время для Ташкента: UTC+5
         updated_at_tz = obj.updated_at.astimezone(tz)
-
-        # Возвращаем форматированные date и time
         return {
-            "date": updated_at_tz.strftime('%Y-%m-%d'),  # Форматируем дату
-            "time": updated_at_tz.strftime('%H:%M')     # Форматируем время
+            "date": updated_at_tz.strftime('%Y-%m-%d'),
+            "time": updated_at_tz.strftime('%H:%M')
         }

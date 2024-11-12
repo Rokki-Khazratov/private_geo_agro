@@ -40,7 +40,6 @@ class Plantation(models.Model):
     district = models.ForeignKey(District, on_delete=models.CASCADE)
 
     plantation_type = models.IntegerField(choices=PLANTATION_TYPE)
-    fruit_type = models.ManyToManyField(Fruits)
     
     status = models.CharField(
         max_length=30, 
@@ -50,6 +49,7 @@ class Plantation(models.Model):
     established_date = models.DateField()
     is_checked = models.BooleanField(default=False)
     updated_at = models.DateTimeField(auto_now=True)
+    total_area = models.FloatField(default=0)  # Общее количество гектаров для сада
 
     def save(self, *args, **kwargs):
         # Сбрасываем is_checked на False при любом изменении
@@ -60,8 +60,13 @@ class Plantation(models.Model):
     def __str__(self):
         return f"Plantation {self.id}"
 
+class PlantationFruitArea(models.Model):
+    plantation = models.ForeignKey(Plantation, on_delete=models.CASCADE, related_name='fruit_area')
+    fruit = models.ForeignKey(Fruits, on_delete=models.CASCADE)
+    area = models.FloatField()  # Площадь, которую занимает данный фрукт в гектар
 
-
+    def __str__(self):
+        return f"{self.fruit.name} area in plantation {self.plantation.id} - {self.area} ha"
 
 class PlantationImage(models.Model):
     plantation = models.ForeignKey(Plantation, on_delete=models.CASCADE, related_name='images')
