@@ -98,9 +98,10 @@ AUTH_PASSWORD_VALIDATORS = [
 
 
 REST_FRAMEWORK = {
-    'DEFAULT_AUTHENTICATION_CLASSES': [
-        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.AllowAny',  # Разрешаем доступ всем
     ],
+    'DEFAULT_AUTHENTICATION_CLASSES': []  # Убираем классы аутентификации (например, JWT)
 }
 
 # Настройки для токенов

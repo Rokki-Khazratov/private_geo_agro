@@ -1,25 +1,35 @@
 from rest_framework import permissions
 from api.models import *
 
+
+
+
+
 class IsDistrictOwner(permissions.BasePermission):
     """
-    Разрешение, которое проверяет, имеет ли пользователь доступ к плантации в конкретном округе.
+    Разрешение, которое проверяет, может ли пользователь видеть только те данные, которые принадлежат его округу.
     """
 
     def has_permission(self, request, view):
-        if request.method in permissions.SAFE_METHODS:
-            return True  # Разрешаем безопасные методы (GET)
+        # Проверяем, что пользователь аутентифицирован
+        if not request.user.is_authenticated:
+            return False
         
-        # Получаем ID плантации из URL
-        plantation_id = view.kwargs.get('pk')
-        if plantation_id is not None:
-            try:
-                plantation = Plantation.objects.get(id=plantation_id)
-                return request.user.has_permission_for_plantation(plantation)
-            except Plantation.DoesNotExist:
-                return False
+        # Проверяем округ пользователя
+        district_ids = request.user.districts.values_list('id', flat=True)
+        
+        if view.action == 'list':
+            # Для списка фильтруем только плантации в доступных округах
+            return view.queryset.filter(district__id__in=district_ids).exists()
 
-        return False
+        # Для детализированных представлений проверяем округ текущей плантации
+        return view.get_object().district.id in district_ids
+
+
+
+
+
+
 
 class IsDistrictOwnerForCoordinates(permissions.BasePermission):
     """

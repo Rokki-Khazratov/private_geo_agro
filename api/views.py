@@ -1,11 +1,12 @@
 from rest_framework import generics
 from rest_framework import filters
-from rest_framework.permissions import IsAuthenticated
+from rest_framework import permissions
 from rest_framework.response import Response
 from rest_framework.status import HTTP_201_CREATED
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework.pagination import PageNumberPagination
 from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework.views import APIView
 from django.db.models import Q
 
 
@@ -22,7 +23,7 @@ class CustomTokenObtainPairView(TokenObtainPairView):
 class UserListAPIView(generics.ListAPIView):
     queryset = CustomUser.objects.all()
     serializer_class = UserSerializer
-    # permission_classes = [IsAuthenticated]  # Только аутентифицированные пользователи могут видеть список
+    # permission_classes = [permissions.IsAuthenticated]  # Только аутентифицированные пользователи могут видеть список
     # def get_queryset(self):
     #     """
     #     Ограничиваем доступ к пользователям в зависимости от прав (например, для суперпользователей).
@@ -35,7 +36,7 @@ class UserListAPIView(generics.ListAPIView):
 class UserDetailAPIView(generics.RetrieveAPIView):
     queryset = CustomUser.objects.all()
     serializer_class = UserSerializer
-    # permission_classes = [IsAuthenticated]
+    # permission_classes = [permissions.IsAuthenticated]
     # def get_object(self):
     #     """
     #     Возвращаем пользователя по ID, если это суперпользователь или сам текущий пользователь.
@@ -44,33 +45,6 @@ class UserDetailAPIView(generics.RetrieveAPIView):
     #     if not self.request.user.is_superuser and obj != self.request.user:
     #         raise PermissionDenied("You do not have permission to view this user.")
     #     return obj
-
-
-
-
-
-
-class PlantationPagination(PageNumberPagination):
-    page_size = 10  # количество объектов на страницу
-    page_size_query_param = 'page_size'
-    max_page_size = 100
-
-
-class PlantationListCreateAPIView(generics.ListCreateAPIView):
-    queryset = Plantation.objects.all()
-    serializer_class = PlantationListSerializer
-    filter_backends = (DjangoFilterBackend, filters.OrderingFilter)
-    filterset_class = PlantationFilter 
-    pagination_class = PlantationPagination
-
-    def perform_create(self, serializer):
-        serializer.save()
-
-
-class PlantationRetrieveUpdateDestroyAPIView(generics.RetrieveUpdateDestroyAPIView):
-    queryset = Plantation.objects.all()
-    serializer_class = PlantationDetailSerializer
-    # permission_classes = [IsAuthenticated]
 
 
 
@@ -87,9 +61,30 @@ class PlantationCoordinatesListCreateAPIView(generics.ListCreateAPIView):
         plantation = self.request.data.get('plantation')
         serializer.save(plantation=plantation)
 
-class PlantationFruitAreaListCreateAPIView(generics.ListCreateAPIView):
-    queryset = PlantationFruitArea.objects.all()
-    serializer_class = PlantationFruitAreaSerializer
+
+
+class PlantationPagination(PageNumberPagination):
+    page_size = 10  # количество объектов на страницу
+    page_size_query_param = 'page_size'
+    max_page_size = 100
+
+
+
+
+
+class PlantationListCreateAPIView(generics.ListCreateAPIView):
+    queryset = Plantation.objects.all()
+    serializer_class = PlantationListSerializer
+    pagination_class = PlantationPagination
+    filter_backends = (DjangoFilterBackend, filters.OrderingFilter)
+    filterset_class = PlantationFilter 
+
     def perform_create(self, serializer):
-        plantation = self.kwargs['plantation_id']  # Получаем ID плантации из URL
-        serializer.save(plantation=plantation)
+        serializer.save()
+
+class PlantationRetrieveUpdateDestroyAPIView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Plantation.objects.all()
+    serializer_class = PlantationDetailSerializer
+
+
+

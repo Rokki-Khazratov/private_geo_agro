@@ -9,6 +9,4 @@ urlpatterns = [
 
     path('plantations/', PlantationListCreateAPIView.as_view(), name='plantation-list-create'),
     path('plantations/<int:pk>/', PlantationRetrieveUpdateDestroyAPIView.as_view(), name='plantation-retrieve-update-destroy'),
-    path('plantations/<int:plantation_id>/fruit_area/', PlantationFruitAreaListCreateAPIView.as_view(), name='fruit_area_list_create'),
-
 ]

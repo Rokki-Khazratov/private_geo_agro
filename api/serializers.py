@@ -129,9 +129,10 @@ class PlantationFruitAreaSerializer(serializers.ModelSerializer):
         model = PlantationFruitArea
         fields = ['fruit', 'area']
 
+
 class PlantationListSerializer(serializers.ModelSerializer):
-    district = serializers.CharField(source='district.name')  # только имя района
-    plantation_type = serializers.CharField(source='get_plantation_type_display')  # Текстовое значение типа плантации
+    district = serializers.CharField(source='district.name') 
+    plantation_type = serializers.CharField(source='get_plantation_type_display')
 
     class Meta:
         model = Plantation
@@ -142,8 +143,8 @@ class PlantationDetailSerializer(serializers.ModelSerializer):
     coordinates = serializers.SerializerMethodField()  
     fruit_areas = serializers.SerializerMethodField()  
     plantation_type = serializers.CharField(source='get_plantation_type_display')  
-    images = serializers.SerializerMethodField()  
-    updated_at = serializers.SerializerMethodField()  
+    images = serializers.SerializerMethodField()
+    updated_at = serializers.SerializerMethodField() 
 
     class Meta:
         model = Plantation
@@ -161,14 +162,13 @@ class PlantationDetailSerializer(serializers.ModelSerializer):
         return [{'latitude': coord.latitude, 'longitude': coord.longitude} for coord in obj.coordinates.all()]
 
     def get_fruit_areas(self, obj):
-        # Получаем площади фруктов через связь PlantationFruitArea
         return [{'fruit': fruit.fruit.name, 'area': fruit.area} for fruit in obj.fruit_area.all()]
 
     def get_images(self, obj):
         return [f"{BASE_URL}{image.image.url}" for image in obj.images.all()]
 
     def get_updated_at(self, obj):
-        tz = timezone.get_fixed_timezone(5 * 60)  # Время для Ташкента: UTC+5
+        tz = timezone.get_fixed_timezone(5 * 60)
         updated_at_tz = obj.updated_at.astimezone(tz)
         return {
             "date": updated_at_tz.strftime('%Y-%m-%d'),
