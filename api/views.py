@@ -1,11 +1,17 @@
 from rest_framework import generics
+from rest_framework import filters
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.status import HTTP_201_CREATED
 from rest_framework_simplejwt.views import TokenObtainPairView
+from rest_framework.pagination import PageNumberPagination
+from django_filters.rest_framework import DjangoFilterBackend
+from django.db.models import Q
+
 
 
 from .permissions import IsDistrictOwner, IsDistrictOwnerForCoordinates
+from .filters import PlantationFilter
 from .models import *
 from .serializers import *
 
@@ -17,7 +23,6 @@ class UserListAPIView(generics.ListAPIView):
     queryset = CustomUser.objects.all()
     serializer_class = UserSerializer
     # permission_classes = [IsAuthenticated]  # Только аутентифицированные пользователи могут видеть список
-
     # def get_queryset(self):
     #     """
     #     Ограничиваем доступ к пользователям в зависимости от прав (например, для суперпользователей).
@@ -31,7 +36,6 @@ class UserDetailAPIView(generics.RetrieveAPIView):
     queryset = CustomUser.objects.all()
     serializer_class = UserSerializer
     # permission_classes = [IsAuthenticated]
-
     # def get_object(self):
     #     """
     #     Возвращаем пользователя по ID, если это суперпользователь или сам текущий пользователь.
@@ -44,49 +48,48 @@ class UserDetailAPIView(generics.RetrieveAPIView):
 
 
 
+
+
+class PlantationPagination(PageNumberPagination):
+    page_size = 10  # количество объектов на страницу
+    page_size_query_param = 'page_size'
+    max_page_size = 100
+
+
 class PlantationListCreateAPIView(generics.ListCreateAPIView):
     queryset = Plantation.objects.all()
-    serializer_class = PlantationSerializer
-
-    def get_queryset(self):
-        queryset = super().get_queryset()
-        return queryset.filter(district__in=self.request.user.districts.all())
+    serializer_class = PlantationListSerializer
+    filter_backends = (DjangoFilterBackend, filters.OrderingFilter)
+    filterset_class = PlantationFilter 
+    pagination_class = PlantationPagination
 
     def perform_create(self, serializer):
         serializer.save()
 
 
-
-# Получить, обновить или удалить плантацию по id
 class PlantationRetrieveUpdateDestroyAPIView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Plantation.objects.all()
-    serializer_class = PlantationSerializer
-    # permission_classes = [IsAuthenticated, IsDistrictOwner]
+    serializer_class = PlantationDetailSerializer
+    # permission_classes = [IsAuthenticated]
+
+
+
 
 
 
 class PlantationCoordinatesListCreateAPIView(generics.ListCreateAPIView):
     serializer_class = PlantationCoordinatesSerializer
     permission_classes = [IsDistrictOwnerForCoordinates]
-
     def get_queryset(self):
-        # Получаем округа, к которым имеет доступ текущий пользователь
         user_districts = self.request.user.districts.all()
-        # Фильтруем координаты по округам, к которым имеет доступ пользователь
         return PlantationCoordinates.objects.filter(plantation__district__in=user_districts)
-
     def perform_create(self, serializer):
-        # При создании координат плантации, добавляем округ, к которому относится плантация
         plantation = self.request.data.get('plantation')
         serializer.save(plantation=plantation)
-
-
 
 class PlantationFruitAreaListCreateAPIView(generics.ListCreateAPIView):
     queryset = PlantationFruitArea.objects.all()
     serializer_class = PlantationFruitAreaSerializer
-
     def perform_create(self, serializer):
-        # Получаем данные о площади для фруктов
         plantation = self.kwargs['plantation_id']  # Получаем ID плантации из URL
         serializer.save(plantation=plantation)

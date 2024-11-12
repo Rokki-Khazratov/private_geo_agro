@@ -129,7 +129,15 @@ class PlantationFruitAreaSerializer(serializers.ModelSerializer):
         model = PlantationFruitArea
         fields = ['fruit', 'area']
 
-class PlantationSerializer(serializers.ModelSerializer):
+class PlantationListSerializer(serializers.ModelSerializer):
+    district = serializers.CharField(source='district.name')  # только имя района
+    plantation_type = serializers.CharField(source='get_plantation_type_display')  # Текстовое значение типа плантации
+
+    class Meta:
+        model = Plantation
+        fields = ['id', 'name', 'inn', 'district', 'plantation_type', 'status', 'established_date', 'is_checked']
+
+class PlantationDetailSerializer(serializers.ModelSerializer):
     district = serializers.SerializerMethodField()  
     coordinates = serializers.SerializerMethodField()  
     fruit_areas = serializers.SerializerMethodField()  
@@ -140,7 +148,7 @@ class PlantationSerializer(serializers.ModelSerializer):
     class Meta:
         model = Plantation
         fields = ['id', 'name', 'inn', 'district', 'plantation_type', 'status', 
-                  'established_date', 'is_checked', 'updated_at', 'coordinates', 
+                  'established_date','total_area', 'is_checked', 'updated_at', 'coordinates', 
                   'images', 'fruit_areas']
 
     def get_district(self, obj):
