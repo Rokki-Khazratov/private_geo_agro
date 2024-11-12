@@ -52,10 +52,19 @@ class Plantation(models.Model):
     total_area = models.FloatField(default=0)  # Общее количество гектаров для сада
 
     def save(self, *args, **kwargs):
-        # Сбрасываем is_checked на False при любом изменении
-        if not self.id or self.is_checked == False:
+        if not self.id or not self.is_checked:
+            # Сбрасываем is_checked на False при любом изменении данных плантации
             self.is_checked = False
+        # Убедитесь, что сравниваете только обычные поля, а не реляционные
+        if self.pk:
+            original = Plantation.objects.get(pk=self.pk)
+            for field in self._meta.get_fields():
+                if field.concrete and field.name != 'is_checked':  # Только реальные поля
+                    if getattr(original, field.name) != getattr(self, field.name):
+                        self.is_checked = False
+                        break
         super(Plantation, self).save(*args, **kwargs)
+
 
     def __str__(self):
         return f"Plantation {self.id}"
