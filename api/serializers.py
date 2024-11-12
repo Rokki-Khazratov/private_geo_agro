@@ -1,19 +1,45 @@
 from core.settings import BASE_URL
+import pytz
 from rest_framework import serializers
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework_simplejwt.tokens import RefreshToken
+from django.contrib.auth import get_user_model
+from django.utils import timezone
+from rest_framework.exceptions import AuthenticationFailed
+from django.contrib.auth import authenticate
 from .models import *
 
-    
+
 
 
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
     @classmethod
     def get_token(cls, user):
         token = super().get_token(user)
-        # Добавляем дополнительную информацию в токен (например, user_id)
+        # Добавляем дополнительную информацию в токен
         token['user_id'] = user.id
         return token
+
+    def validate(self, attrs):
+        # Аутентифицируем пользователя
+        username = attrs.get("username")
+        password = attrs.get("password")
+
+        user = authenticate(username=username, password=password)
+        
+        if user is None:
+            raise AuthenticationFailed("Invalid credentials")
+
+        # Обновляем last_login на текущий момент
+        user.last_login = timezone.now()
+        user.save()
+
+        # Создаем и возвращаем токен
+        refresh = self.get_token(user)
+        return {
+            'access': str(refresh.access_token),
+            'refresh': str(refresh)
+        }
 
 
 
@@ -28,6 +54,53 @@ class DistrictSerializer(serializers.ModelSerializer):
     class Meta:
         model = District
         fields = ['id', 'name', 'region']
+
+
+
+
+
+class UserSerializer(serializers.ModelSerializer):
+    districts = serializers.SerializerMethodField()  # Для преобразования districts
+    region = serializers.SerializerMethodField()  # Для преобразования region
+    last_login = serializers.SerializerMethodField()  # Для отображения времени последнего входа с учётом часового пояса
+    phone_number = serializers.SerializerMethodField()  # Для отображения времени последнего входа с учётом часового пояса
+
+    class Meta:
+        model = get_user_model()
+        fields = ['id', 'username','first_name','last_name','phone_number', 'region', 'districts', 'last_login']
+
+    def get_phone_number(self,obj):
+        return obj.phone_number
+
+    def get_districts(self, obj):
+        """
+        Метод для получения только названия округов пользователя
+        """
+        return [district.name for district in obj.districts.all()]
+
+    def get_region(self, obj):
+        """
+        Метод для получения только названия региона
+        """
+        district = obj.districts.first()  # Получаем первый округ пользователя
+        if district:
+            return district.region.name  # Возвращаем название региона
+        return None  # Если нет округа, возвращаем None
+
+    def get_last_login(self, obj):
+        """
+        Метод для получения последнего времени входа с учётом часового пояса.
+        """
+        if obj.last_login:
+            # Устанавливаем правильный часовой пояс для Ташкента (+5)
+            tz = pytz.timezone('Asia/Tashkent')
+            # Преобразуем время в нужный часовой пояс
+            last_login_time = obj.last_login.astimezone(tz)
+            # Форматируем время в строку
+            return last_login_time.strftime('%Y-%m-%d %H:%M:%S')
+        return None
+
+
 
 class FruitsSerializer(serializers.ModelSerializer):
     class Meta:
@@ -47,8 +120,6 @@ class PlantationCoordinatesSerializer(serializers.ModelSerializer):
 
 
 
-from django.utils import timezone
-from rest_framework import serializers
 
 class PlantationSerializer(serializers.ModelSerializer):
     district = serializers.SerializerMethodField()  # Для преобразования district

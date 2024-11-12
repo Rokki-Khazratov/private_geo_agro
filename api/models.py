@@ -82,10 +82,17 @@ class PlantationCoordinates(models.Model):
 # Добавление модели User
 class CustomUser(User):
     districts = models.ManyToManyField(District, related_name='users', blank=True)
+    phone_number = models.CharField(max_length=255)
 
     def has_permission_for_plantation(self, plantation):
         """Проверяет, имеет ли пользователь доступ к плантации."""
         return plantation.district in self.districts.all()
+        
+    def has_access_to_district(self, district):
+        """
+        Проверяет, есть ли у пользователя доступ к конкретному округу.
+        """
+        return district in self.districts.all()
 
     def __str__(self):
         return self.username

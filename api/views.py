@@ -11,6 +11,37 @@ from .serializers import *
 
 
 
+class UserListAPIView(generics.ListAPIView):
+    queryset = CustomUser.objects.all()
+    serializer_class = UserSerializer
+    # permission_classes = [IsAuthenticated]  # Только аутентифицированные пользователи могут видеть список
+
+    # def get_queryset(self):
+    #     """
+    #     Ограничиваем доступ к пользователям в зависимости от прав (например, для суперпользователей).
+    #     """
+    #     queryset = super().get_queryset()
+    #     if self.request.user.is_superuser:
+    #         return queryset
+    #     return queryset.filter(id=self.request.user.id)  # Только текущий пользователь видит себя
+
+class UserDetailAPIView(generics.RetrieveAPIView):
+    queryset = CustomUser.objects.all()
+    serializer_class = UserSerializer
+    # permission_classes = [IsAuthenticated]
+
+    # def get_object(self):
+    #     """
+    #     Возвращаем пользователя по ID, если это суперпользователь или сам текущий пользователь.
+    #     """
+    #     obj = super().get_object()
+    #     if not self.request.user.is_superuser and obj != self.request.user:
+    #         raise PermissionDenied("You do not have permission to view this user.")
+    #     return obj
+
+
+
+
 class PlantationListCreateAPIView(generics.ListCreateAPIView):
     queryset = Plantation.objects.all()
     serializer_class = PlantationSerializer

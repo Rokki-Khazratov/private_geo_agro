@@ -7,6 +7,8 @@ urlpatterns = [
     
     path('login/', CustomTokenObtainPairView.as_view(), name='token-obtain'),
 
+    path('users/', UserListAPIView.as_view(), name='user-list'),
+    path('users/<int:pk>/', UserDetailAPIView.as_view(), name='user-detail'), 
 
 
 ]
