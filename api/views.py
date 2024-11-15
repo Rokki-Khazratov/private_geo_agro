@@ -7,7 +7,7 @@ from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework.pagination import PageNumberPagination
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.views import APIView
-from django.db.models import Q
+from django.db.models import Q,Sum
 
 
 
@@ -50,6 +50,28 @@ class UserDetailAPIView(generics.RetrieveAPIView):
 
 
 
+class StatisticsAPIView(generics.GenericAPIView):
+    serializer_class = StatisticsSerializer
+    def get(self, request, *args, **kwargs):
+        plantations = Plantation.objects.all()
+        total_issiqxonas = plantations.filter(plantation_type=2).aggregate(total_area=Sum('total_area'))['total_area'] or 0
+        total_uzumzors = plantations.filter(plantation_type=1).aggregate(total_area=Sum('total_area'))['total_area'] or 0
+        total_bogs = plantations.filter(plantation_type=3).aggregate(total_area=Sum('total_area'))['total_area'] or 0
+        total_area = plantations.aggregate(total_area=Sum('total_area'))['total_area'] or 0
+        total_fruit_areas = PlantationFruitArea.objects.aggregate(total_area=Sum('area'))['total_area'] or 0
+
+        # Формируем ответ
+        stats = {
+            'total_issiqxonas': total_issiqxonas,
+            'total_uzumzors': total_uzumzors,
+            'total_bogs': total_bogs,
+            'total_area': total_area,
+            'total_fruit_areas': total_fruit_areas,
+        }
+        return Response(stats)
+
+
+
 
 class PlantationCoordinatesListCreateAPIView(generics.ListCreateAPIView):
     serializer_class = PlantationCoordinatesSerializer
@@ -85,6 +107,3 @@ class PlantationListCreateAPIView(generics.ListCreateAPIView):
 class PlantationRetrieveUpdateDestroyAPIView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Plantation.objects.all()
     serializer_class = PlantationDetailSerializer
-
-
-

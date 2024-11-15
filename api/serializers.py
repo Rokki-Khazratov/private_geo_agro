@@ -11,6 +11,16 @@ from .models import *
 
 
 
+class StatisticsSerializer(serializers.Serializer):
+    total_issiqxonas = serializers.FloatField()
+    total_uzumzors = serializers.FloatField()
+    total_bogs = serializers.FloatField()
+    total_area = serializers.FloatField() 
+    total_fruit_areas = serializers.FloatField() 
+
+    class Meta:
+        fields = ['total_issiqxonas', 'total_uzumzors', 'total_bogs', 'total_area', 'total_fruit_areas']
+
 
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
     @classmethod

@@ -10,6 +10,5 @@ urlpatterns = [
     path('plantations/', PlantationListCreateAPIView.as_view(), name='plantation-list-create'),
     path('plantations/<int:pk>/', PlantationRetrieveUpdateDestroyAPIView.as_view(), name='plantation-retrieve-update-destroy'),
 
-    # path('statistics/', StatisticsAPIView.as_view(), name='statistics-for-admin'),
-    #!todo code statistics view as a summary of all data
+    path('statistics/', StatisticsAPIView.as_view(), name='statistics-for-admin'),
 ]
