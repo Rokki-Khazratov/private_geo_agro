@@ -30,10 +30,15 @@ from rest_framework.response import Response
 from .serializers import UserSerializer
 from rest_framework import permissions
 
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework.exceptions import AuthenticationFailed
+from rest_framework_simplejwt.authentication import JWTAuthentication
+from .serializers import UserInfoSerializer
+
 class UserInfoAPIView(APIView):
 
     def post(self, request, *args, **kwargs):
-        # Извлекаем access token из тела запроса
         token = request.data.get('access_token', None)
 
         if not token:
@@ -41,16 +46,14 @@ class UserInfoAPIView(APIView):
 
         try:
             jwt_authentication = JWTAuthentication()
-
-            # Пытаемся аутентифицировать пользователя
+            request.META['HTTP_AUTHORIZATION'] = f'Bearer {token}'
             user, _ = jwt_authentication.authenticate(request)
-
-            # Если токен правильный, мы получаем пользователя из кортежа, возвращаем его данные
             user_data = UserInfoSerializer(user).data
             return Response(user_data)
 
         except AuthenticationFailed:
             raise AuthenticationFailed("Invalid token or token has expired")
+
 
 
 
