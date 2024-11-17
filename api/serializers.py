@@ -22,11 +22,11 @@ class StatisticsSerializer(serializers.Serializer):
         fields = ['total_issiqxonas', 'total_uzumzors', 'total_bogs', 'total_area', 'total_fruit_areas']
 
 
+
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
     @classmethod
     def get_token(cls, user):
         token = super().get_token(user)
-        # Добавляем дополнительную информацию в токен
         token['user_id'] = user.id
         return token
 
@@ -65,6 +65,13 @@ class DistrictSerializer(serializers.ModelSerializer):
         model = District
         fields = ['id', 'name', 'region']
 
+
+
+
+class UserInfoSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = get_user_model()
+        fields = ['id', 'username', 'first_name', 'last_name', 'email', 'last_login']
 
 
 

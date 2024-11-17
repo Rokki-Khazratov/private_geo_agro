@@ -13,6 +13,18 @@ class PlantationFilter(django_filters.FilterSet):
     min_area = django_filters.NumberFilter(field_name='fruit_area__area', lookup_expr='gte')
     max_area = django_filters.NumberFilter(field_name='fruit_area__area', lookup_expr='lte')
 
+    region_name = django_filters.CharFilter(field_name='district__region__name', lookup_expr='icontains')
+    district_id = django_filters.NumberFilter(field_name='district__id')
+
     class Meta:
         model = Plantation
-        fields = ['name', 'inn', 'region_id', 'region_name', 'district_id', 'plantation_type', 'fruit_id', 'fruit_name', 'min_area', 'max_area']
+        fields = ['name', 'inn', 'region_name', 'district_id', 'plantation_type', 'fruit_id', 'fruit_name', 'min_area', 'max_area']
+
+
+class StatisticsFilter(django_filters.FilterSet):
+    region = django_filters.CharFilter(field_name='district__region__name', lookup_expr='icontains')
+    district = django_filters.NumberFilter(field_name='district__id')
+
+    class Meta:
+        model = Plantation
+        fields = ['region', 'district']

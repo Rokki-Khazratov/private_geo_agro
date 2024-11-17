@@ -7,14 +7,56 @@ from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework.pagination import PageNumberPagination
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.views import APIView
+from rest_framework_simplejwt.authentication import JWTAuthentication
+from rest_framework import status
 from django.db.models import Q,Sum
 
-
-
 from .permissions import IsDistrictOwner, IsDistrictOwnerForCoordinates
-from .filters import PlantationFilter
+from .filters import PlantationFilter, StatisticsFilter
 from .models import *
 from .serializers import *
+
+
+from rest_framework.views import APIView
+from rest_framework.exceptions import AuthenticationFailed
+from rest_framework_simplejwt.authentication import JWTAuthentication
+from rest_framework.response import Response
+from .serializers import UserSerializer
+
+from rest_framework.views import APIView
+from rest_framework.exceptions import AuthenticationFailed
+from rest_framework_simplejwt.authentication import JWTAuthentication
+from rest_framework.response import Response
+from .serializers import UserSerializer
+from rest_framework import permissions
+
+class UserInfoAPIView(APIView):
+
+    def post(self, request, *args, **kwargs):
+        # Извлекаем access token из тела запроса
+        token = request.data.get('access_token', None)
+
+        if not token:
+            raise AuthenticationFailed("Access token is missing in the request body")
+
+        try:
+            jwt_authentication = JWTAuthentication()
+
+            # Пытаемся аутентифицировать пользователя
+            user, _ = jwt_authentication.authenticate(request)
+
+            # Если токен правильный, мы получаем пользователя из кортежа, возвращаем его данные
+            user_data = UserInfoSerializer(user).data
+            return Response(user_data)
+
+        except AuthenticationFailed:
+            raise AuthenticationFailed("Invalid token or token has expired")
+
+
+
+
+
+
 
 
 class CustomTokenObtainPairView(TokenObtainPairView):
@@ -50,6 +92,8 @@ class UserDetailAPIView(generics.RetrieveAPIView):
 
 
 
+
+
 class StatisticsAPIView(generics.GenericAPIView):
     serializer_class = StatisticsSerializer
     def get(self, request, *args, **kwargs):
@@ -60,7 +104,7 @@ class StatisticsAPIView(generics.GenericAPIView):
         total_area = plantations.aggregate(total_area=Sum('total_area'))['total_area'] or 0
         total_fruit_areas = PlantationFruitArea.objects.aggregate(total_area=Sum('area'))['total_area'] or 0
 
-        # Формируем ответ
+
         stats = {
             'total_issiqxonas': total_issiqxonas,
             'total_uzumzors': total_uzumzors,
@@ -69,6 +113,7 @@ class StatisticsAPIView(generics.GenericAPIView):
             'total_fruit_areas': total_fruit_areas,
         }
         return Response(stats)
+
 
 
 
