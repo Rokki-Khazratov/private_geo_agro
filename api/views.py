@@ -1,5 +1,6 @@
 from rest_framework import generics
 from rest_framework import filters
+from rest_framework.decorators import api_view
 from rest_framework import permissions
 from rest_framework.response import Response
 from rest_framework.status import HTTP_201_CREATED
@@ -43,6 +44,27 @@ class UserInfoAPIView(APIView):
 
 
 
+@api_view(['POST'])
+def create_user(request):
+    if request.method == 'POST':
+        serializer = CustomUserCreateSerializer(data=request.data)
+        if serializer.is_valid():
+            user = serializer.save()  # Сохраняем пользователя
+            return Response({
+                'id': user.id,
+                'username': user.username,
+                'first_name': user.first_name,
+                'last_name': user.last_name,
+                'phone_number': user.phone_number,
+                'districts': [district.name for district in user.districts.all()],
+            }, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+
+
+
+
 class CustomTokenRefreshView(TokenRefreshView):
     def post(self, request, *args, **kwargs):
         refresh_token = request.data.get('refresh')
@@ -63,6 +85,37 @@ class CustomTokenRefreshView(TokenRefreshView):
             return Response({"detail": f"Error: {str(e)}"}, status=400)
 
 
+
+
+@api_view(['POST'])
+def create_district(request):
+    if request.method == 'POST':
+        # Проверяем, что region передан в запросе
+        region_id = request.data.get('region', None)
+        if not region_id:
+            return Response({"error": "Region is required"}, status=status.HTTP_400_BAD_REQUEST)
+        
+        try:
+            region = Region.objects.get(id=region_id)  # Получаем регион по ID
+        except Region.DoesNotExist:
+            return Response({"error": "Region not found"}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Создаем новый округ с выбранным регионом
+        request.data['region'] = region.id  # Устанавливаем ID региона в данные
+        serializer = DistrictSerializer(data=request.data)
+
+        if serializer.is_valid():
+            district = serializer.save()  # Сохраняем новый округ
+            return Response(DistrictSerializer(district).data, status=status.HTTP_201_CREATED)
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+@api_view(['GET'])
+def get_districts(request):
+    if request.method == 'GET':
+        districts = District.objects.all()
+        serializer = DistrictSerializer(districts, many=True)
+        return Response(serializer.data)
 
 
 

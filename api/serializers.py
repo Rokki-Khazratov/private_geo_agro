@@ -12,6 +12,19 @@ from .models import *
 
 
 
+
+class DistrictSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = District
+        fields = ['id', 'name', 'region']  # Включаем поле 'region' в сериализатор, чтобы его можно было установить
+        read_only_fields = ['region']  # Сделаем поле region доступным только для чтения
+
+    def create(self, validated_data):
+        # Извлекаем или создаем регион, по умолчанию его можно присвоить пустым (например, если у вас уже есть Region в БД)
+        region = Region.objects.first()  # Или добавьте свой способ получения региона
+        district = District.objects.create(region=region, **validated_data)
+        return district
+
 class StatisticsSerializer(serializers.Serializer):
     total_issiqxonas = serializers.FloatField()
     total_uzumzors = serializers.FloatField()
@@ -59,17 +72,41 @@ class RegionSerializer(serializers.ModelSerializer):
         model = Region
         fields = ['id', 'name']
 
+
 class DistrictSerializer(serializers.ModelSerializer):
-    region = RegionSerializer()
+    region = serializers.PrimaryKeyRelatedField(queryset=Region.objects.all())  # Ожидаем только ID региона
 
     class Meta:
         model = District
-        fields = ['id', 'name', 'region']
+        fields = ['id', 'name', 'region']  # region теперь принимает только ID
+
 
 class UserInfoSerializer(serializers.ModelSerializer):
     class Meta:
         model = get_user_model()
         fields = ['id', 'username', 'first_name', 'last_name', 'email', 'last_login']
+
+
+
+
+class CustomUserCreateSerializer(serializers.ModelSerializer):
+    districts = serializers.PrimaryKeyRelatedField(queryset=District.objects.all(), many=True)
+    
+    class Meta:
+        model = CustomUser  # Используем кастомную модель
+        fields = ['username', 'first_name', 'last_name', 'phone_number', 'districts']
+    
+    def create(self, validated_data):
+        districts = validated_data.pop('districts', [])  # Извлекаем округа
+        user = CustomUser.objects.create_user(**validated_data)  # Создаём пользователя
+        
+        user.districts.set(districts)  # Привязываем округа
+        user.save()  # Сохраняем пользователя
+        
+        return user
+
+
+
 
 class UserSerializer(serializers.ModelSerializer):
     districts = serializers.SerializerMethodField()  # Для преобразования districts
@@ -179,14 +216,6 @@ class PlantationDetailSerializer(serializers.ModelSerializer):
             "date": updated_at_tz.strftime('%Y-%m-%d'),
             "time": updated_at_tz.strftime('%H:%M')
         }
-    
-
-
-
-
-
-
-
 
 
 

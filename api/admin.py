@@ -67,7 +67,7 @@ class RegionAdmin(admin.ModelAdmin):
     search_fields = ('name',)
 
 class DistrictAdmin(admin.ModelAdmin):
-    list_display = ('name', 'region')
+    list_display = ('name','id', 'region')
     search_fields = ('name', 'region__name')
     list_filter = ('region',)
 
