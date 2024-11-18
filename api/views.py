@@ -117,6 +117,13 @@ def get_districts(request):
         serializer = DistrictSerializer(districts, many=True)
         return Response(serializer.data)
 
+@api_view(['GET'])
+def get_regions(request):
+    if request.method == 'GET':
+        regions = Region.objects.all()
+        serializer = RegionSerializer(regions, many=True)
+        return Response(serializer.data)
+
 
 
 
