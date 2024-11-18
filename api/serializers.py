@@ -155,7 +155,7 @@ class PlantationDetailSerializer(serializers.ModelSerializer):
         model = Plantation
         fields = ['id', 'name', 'inn', 'district', 'plantation_type', 'status', 
                   'established_date', 'total_area', 'is_checked', 'updated_at', 
-                  'coordinates', 'images', 'fruit_areas', 'is_deleting']
+                  'coordinates', 'images', 'fruit_areas', 'is_deleting', 'prev_data']
 
     def get_district(self, obj):
         return {

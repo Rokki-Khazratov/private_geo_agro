@@ -48,25 +48,51 @@ class Plantation(models.Model):
     )
     established_date = models.DateField()
     total_area = models.FloatField(default=0)  # Общее количество гектаров для сада
-    
+
     is_checked = models.BooleanField(default=False)
     is_deleting = models.BooleanField(default=False)  # Добавляем поле для отслеживания плантации на удаление
     updated_at = models.DateTimeField(auto_now=True)
+    prev_data = models.JSONField(null=True, blank=True)  # Для хранения предыдущих данных плантации
 
     def save(self, *args, **kwargs):
+        # Проверяем, если is_checked = True и есть изменения, вызываем clear()
+        if self.is_checked and self.prev_data:
+            self.clear()
+
         if not self.id or not self.is_checked:
             # Сбрасываем is_checked на False при любом изменении данных плантации
             self.is_checked = False
-        # Убедитесь, что сравниваете только обычные поля, а не реляционные
+
+        # Если это не новый объект, проверяем изменения
         if self.pk:
             original = Plantation.objects.get(pk=self.pk)
+            
+            # Проверка, были ли изменения в важных полях
+            changes = {}
             for field in self._meta.get_fields():
-                if field.concrete and field.name != 'is_checked':  # Только реальные поля
+                if field.concrete and field.name != 'is_checked' and field.name != 'prev_data':
+                    # Сравниваем старое значение с новым
                     if getattr(original, field.name) != getattr(self, field.name):
-                        self.is_checked = False
-                        break
+                        changes[field.name] = {
+                            'old': getattr(original, field.name),
+                            'new': getattr(self, field.name)
+                        }
+
+            # Если изменения есть, сохраняем старые данные
+            if changes:
+                self.prev_data = changes
+            else:
+                self.prev_data = None  # Если изменений нет, очищаем поле prev_data
+
         super(Plantation, self).save(*args, **kwargs)
 
+    def clear(self):
+        """
+        Метод очистки данных: сбрасываем prev_data и выполняем другие действия при необходимости.
+        """
+        print(f"Clearing previous data for Plantation {self.id}...")
+        self.prev_data = None  # Очищаем предшествующие данные
+        # Можно добавить дополнительные действия для очистки, если необходимо.
 
     def __str__(self):
         return f"Plantation {self.id}"
