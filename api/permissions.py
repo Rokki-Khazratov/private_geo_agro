@@ -5,25 +5,25 @@ from api.models import *
 
 
 
+
 class IsDistrictOwner(permissions.BasePermission):
     """
-    Разрешение, которое проверяет, может ли пользователь видеть только те данные, которые принадлежат его округу.
+    Разрешение для проверки, имеет ли пользователь доступ к округу текущей плантации.
     """
 
     def has_permission(self, request, view):
-        # Проверяем, что пользователь аутентифицирован
+        # Если пользователь аутентифицирован
         if not request.user.is_authenticated:
             return False
         
-        # Проверяем округ пользователя
-        district_ids = request.user.districts.values_list('id', flat=True)
-        
-        if view.action == 'list':
-            # Для списка фильтруем только плантации в доступных округах
-            return view.queryset.filter(district__id__in=district_ids).exists()
+        # Суперпользователи могут создавать плантации в любом округе
+        if request.user.is_superuser:
+            return True
 
-        # Для детализированных представлений проверяем округ текущей плантации
-        return view.get_object().district.id in district_ids
+        # Проверяем, что пользователь связан с округом текущей плантации
+        district_ids = request.user.districts.values_list('id', flat=True)
+        return request.data.get('district') in district_ids
+
 
 
 

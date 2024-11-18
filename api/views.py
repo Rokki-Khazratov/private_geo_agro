@@ -7,6 +7,9 @@ from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework.pagination import PageNumberPagination
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.views import APIView
+from rest_framework_simplejwt.views import TokenRefreshView
+from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework.exceptions import AuthenticationFailed
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework import status
 from django.db.models import Q,Sum
@@ -16,25 +19,6 @@ from .filters import PlantationFilter, StatisticsFilter
 from .models import *
 from .serializers import *
 
-
-from rest_framework.views import APIView
-from rest_framework.exceptions import AuthenticationFailed
-from rest_framework_simplejwt.authentication import JWTAuthentication
-from rest_framework.response import Response
-from .serializers import UserSerializer
-
-from rest_framework.views import APIView
-from rest_framework.exceptions import AuthenticationFailed
-from rest_framework_simplejwt.authentication import JWTAuthentication
-from rest_framework.response import Response
-from .serializers import UserSerializer
-from rest_framework import permissions
-
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework.exceptions import AuthenticationFailed
-from rest_framework_simplejwt.authentication import JWTAuthentication
-from .serializers import UserInfoSerializer
 
 class UserInfoAPIView(APIView):
 
@@ -57,6 +41,26 @@ class UserInfoAPIView(APIView):
 
 
 
+
+
+class CustomTokenRefreshView(TokenRefreshView):
+    def post(self, request, *args, **kwargs):
+        refresh_token = request.data.get('refresh')
+        if not refresh_token:
+            return Response({"detail": "Refresh token is required"}, status=400)
+
+        try:
+            # Validate and get the refresh token
+            refresh = RefreshToken(refresh_token)
+            access_token = str(refresh.access_token)
+            refresh_token = str(refresh)
+
+            return Response({
+                'access': access_token,
+                'refresh': refresh_token,
+            })
+        except Exception as e:
+            return Response({"detail": f"Error: {str(e)}"}, status=400)
 
 
 
@@ -145,9 +149,16 @@ class PlantationPagination(PageNumberPagination):
 
 
 
-class PlantationListCreateAPIView(generics.ListCreateAPIView):
+class PlantationListCreateAPIView(generics.ListAPIView):
     queryset = Plantation.objects.all()
     serializer_class = PlantationListSerializer
+    pagination_class = PlantationPagination
+    filter_backends = (DjangoFilterBackend, filters.OrderingFilter)
+    filterset_class = PlantationFilter 
+
+class PlantationFullListAPIView(generics.ListAPIView):
+    queryset = Plantation.objects.all()
+    serializer_class = PlantationDetailSerializer
     pagination_class = PlantationPagination
     filter_backends = (DjangoFilterBackend, filters.OrderingFilter)
     filterset_class = PlantationFilter 
@@ -181,3 +192,23 @@ class PlantationRetrieveUpdateDestroyAPIView(generics.RetrieveUpdateDestroyAPIVi
 
     def perform_update(self, serializer):
         serializer.save()
+
+
+class PlantationCreateAPIView(APIView):
+    # permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, *args, **kwargs):
+        print("Received request data:", request.data)  # Отладка: что пришло в запросе
+
+        # Пробуем сериализовать данные
+        serializer = PlantationCreateSerializer(data=request.data)
+        
+        if serializer.is_valid():
+            print("Validated data:", serializer.validated_data)  # Отладка: проверка валидированных данных
+            plantation = serializer.save()
+            return Response(PlantationDetailSerializer(plantation).data, status=status.HTTP_201_CREATED)
+        
+        # Если невалидно, выводим ошибки
+        print("Errors:", serializer.errors)  # Отладка: вывод ошибок
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+

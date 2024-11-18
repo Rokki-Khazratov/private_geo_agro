@@ -3,6 +3,7 @@ import pytz
 from rest_framework import serializers
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework.exceptions import ValidationError
 from django.contrib.auth import get_user_model
 from django.utils import timezone
 from rest_framework.exceptions import AuthenticationFailed
@@ -127,15 +128,6 @@ class PlantationImageSerializer(serializers.ModelSerializer):
         model = PlantationImage
         fields = ['image']  # Только поле image
 
-class PlantationCoordinatesSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = PlantationCoordinates
-        fields = ['id', 'plantation', 'latitude', 'longitude']
-
-class PlantationFruitAreaSerializer(serializers.ModelSerializer):
-    fruit = FruitsSerializer()  # Сериализуем фрукт
-    area = serializers.FloatField()  # Площадь фрукта
-
     class Meta:
         model = PlantationFruitArea
         fields = ['fruit', 'area']
@@ -187,3 +179,62 @@ class PlantationDetailSerializer(serializers.ModelSerializer):
             "date": updated_at_tz.strftime('%Y-%m-%d'),
             "time": updated_at_tz.strftime('%H:%M')
         }
+    
+
+
+
+
+
+
+
+
+
+
+
+class PlantationCoordinatesSerializer(serializers.Serializer):
+    latitude = serializers.FloatField()
+    longitude = serializers.FloatField()
+
+class PlantationFruitAreaSerializer(serializers.ModelSerializer):
+    fruit = serializers.PrimaryKeyRelatedField(queryset=Fruits.objects.all())  # Для связи с фруктами
+    area = serializers.FloatField()  # Площадь фрукта
+
+    class Meta:
+        model = PlantationFruitArea
+        fields = ['fruit', 'area']
+
+
+class PlantationCreateSerializer(serializers.ModelSerializer):
+    coordinates = PlantationCoordinatesSerializer(many=True)
+    fruit_area = PlantationFruitAreaSerializer(many=True)
+    images = serializers.ListField(child=serializers.CharField())  # Изменено для работы с URL изображений
+
+    class Meta:
+        model = Plantation
+        fields = ['name', 'inn', 'district', 'plantation_type', 'status', 'established_date', 'total_area', 'coordinates', 'fruit_area', 'images']
+
+    def create(self, validated_data):
+        # Извлекаем данные из validated_data
+        coordinates_data = validated_data.pop('coordinates')
+        fruit_area_data = validated_data.pop('fruit_area')
+        images_data = validated_data.pop('images')
+
+        # Создание самой плантации
+        plantation = Plantation.objects.create(**validated_data)
+
+        # Сохранение координат
+        for coord in coordinates_data:
+            PlantationCoordinates.objects.create(plantation=plantation, **coord)
+
+        # Сохранение фруктовых площадей
+        for fruit in fruit_area_data:
+            PlantationFruitArea.objects.create(plantation=plantation, **fruit)
+
+        # Сохранение изображений
+        for image_url in images_data:
+            PlantationImage.objects.create(plantation=plantation, image=image_url)
+
+        return plantation
+
+
+
