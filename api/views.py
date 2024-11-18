@@ -62,6 +62,9 @@ class UserInfoAPIView(APIView):
 
 
 
+
+
+
 class CustomTokenObtainPairView(TokenObtainPairView):
     serializer_class = CustomTokenObtainPairSerializer
 
@@ -152,6 +155,29 @@ class PlantationListCreateAPIView(generics.ListCreateAPIView):
     def perform_create(self, serializer):
         serializer.save()
 
+
+
 class PlantationRetrieveUpdateDestroyAPIView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Plantation.objects.all()
     serializer_class = PlantationDetailSerializer
+
+    def update(self, request, *args, **kwargs):
+        plantation = self.get_object()
+
+        # Получаем данные для обновления
+        data = request.data
+
+        # Проверяем, что поле is_deleting передано и обновляем его
+        if 'is_deleting' in data:
+            plantation.is_deleting = data['is_deleting']
+        
+        # Если есть другие данные для обновления, передаем их в сериализатор
+        serializer = self.get_serializer(plantation, data=data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
+
+        # Возвращаем успешный ответ с обновленными данными
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    def perform_update(self, serializer):
+        serializer.save()

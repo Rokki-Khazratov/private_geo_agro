@@ -65,16 +65,10 @@ class DistrictSerializer(serializers.ModelSerializer):
         model = District
         fields = ['id', 'name', 'region']
 
-
-
-
 class UserInfoSerializer(serializers.ModelSerializer):
     class Meta:
         model = get_user_model()
         fields = ['id', 'username', 'first_name', 'last_name', 'email', 'last_login']
-
-
-
 
 class UserSerializer(serializers.ModelSerializer):
     districts = serializers.SerializerMethodField()  # Для преобразования districts
@@ -119,6 +113,9 @@ class UserSerializer(serializers.ModelSerializer):
 
 
 
+
+
+
 class FruitsSerializer(serializers.ModelSerializer):
     class Meta:
         model = Fruits
@@ -135,9 +132,6 @@ class PlantationCoordinatesSerializer(serializers.ModelSerializer):
         model = PlantationCoordinates
         fields = ['id', 'plantation', 'latitude', 'longitude']
 
-
-
-
 class PlantationFruitAreaSerializer(serializers.ModelSerializer):
     fruit = FruitsSerializer()  # Сериализуем фрукт
     area = serializers.FloatField()  # Площадь фрукта
@@ -153,7 +147,8 @@ class PlantationListSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Plantation
-        fields = ['id', 'name', 'inn', 'district', 'plantation_type', 'status', 'established_date', 'is_checked']
+        fields = ['id', 'name', 'inn', 'district', 'plantation_type', 'status', 'established_date', 'is_checked', 'is_deleting']
+
 
 class PlantationDetailSerializer(serializers.ModelSerializer):
     district = serializers.SerializerMethodField()  
@@ -161,13 +156,14 @@ class PlantationDetailSerializer(serializers.ModelSerializer):
     fruit_areas = serializers.SerializerMethodField()  
     plantation_type = serializers.CharField(source='get_plantation_type_display')  
     images = serializers.SerializerMethodField()
-    updated_at = serializers.SerializerMethodField() 
+    updated_at = serializers.SerializerMethodField()
+    is_deleting = serializers.BooleanField()  # Добавляем поле is_deleting
 
     class Meta:
         model = Plantation
         fields = ['id', 'name', 'inn', 'district', 'plantation_type', 'status', 
-                  'established_date','total_area', 'is_checked', 'updated_at', 'coordinates', 
-                  'images', 'fruit_areas']
+                  'established_date', 'total_area', 'is_checked', 'updated_at', 
+                  'coordinates', 'images', 'fruit_areas', 'is_deleting']
 
     def get_district(self, obj):
         return {

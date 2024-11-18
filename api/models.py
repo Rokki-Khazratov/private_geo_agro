@@ -47,9 +47,11 @@ class Plantation(models.Model):
         default=HealthStatus.YAHSHI 
     )
     established_date = models.DateField()
-    is_checked = models.BooleanField(default=False)
-    updated_at = models.DateTimeField(auto_now=True)
     total_area = models.FloatField(default=0)  # Общее количество гектаров для сада
+    
+    is_checked = models.BooleanField(default=False)
+    is_deleting = models.BooleanField(default=False)  # Добавляем поле для отслеживания плантации на удаление
+    updated_at = models.DateTimeField(auto_now=True)
 
     def save(self, *args, **kwargs):
         if not self.id or not self.is_checked:
@@ -111,3 +113,4 @@ class CustomUser(User):
     def __str__(self):
         return self.username
     
+

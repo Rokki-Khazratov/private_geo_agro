@@ -1,6 +1,6 @@
+from rest_framework_simplejwt.views import TokenRefreshView
 from django.urls import path
 from .views import *
-from rest_framework_simplejwt.views import TokenRefreshView
 
 urlpatterns = [
     path('login/', CustomTokenObtainPairView.as_view(), name='token-obtain'),
@@ -15,3 +15,4 @@ urlpatterns = [
 
     path('statistics/', StatisticsAPIView.as_view(), name='statistics-for-admin'),
 ]
+
