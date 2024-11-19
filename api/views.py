@@ -19,6 +19,8 @@ from .permissions import IsDistrictOwner, IsDistrictOwnerForCoordinates
 from .filters import PlantationFilter, StatisticsFilter
 from .models import *
 from .serializers import *
+from .plantations import *
+
 
 
 class UserInfoAPIView(APIView):
@@ -205,6 +207,11 @@ class PlantationPagination(PageNumberPagination):
     page_size_query_param = 'page_size'
     max_page_size = 100
 
+class MapPlantationPagination(PageNumberPagination):
+    page_size = 100 
+    page_size_query_param = 'page_size'
+    max_page_size = 1000
+
 
 
 
@@ -216,15 +223,110 @@ class PlantationListCreateAPIView(generics.ListAPIView):
     filter_backends = (DjangoFilterBackend, filters.OrderingFilter)
     filterset_class = PlantationFilter 
 
+class MapPlantationListAPIView(generics.ListAPIView):
+    serializer_class = MapPlantationSerializer
+    pagination_class = MapPlantationPagination
+
+    def get_queryset(self):
+        queryset = Plantation.objects.all()
+        status = self.request.query_params.get('status', None)
+        region_name = self.request.query_params.get('region', None)
+        district_id = self.request.query_params.get('district', None)
+        name = self.request.query_params.get('name', None)
+        inn = self.request.query_params.get('inn', None)
+        plantation_type = self.request.query_params.get('plantation_type', None)
+
+        #filters   
+        if status:
+            queryset = queryset.filter(status=status)
+        if region_name:
+            queryset = queryset.filter(district__region__name__icontains=region_name)
+        if district_id:
+            queryset = queryset.filter(district__id=district_id)
+        if plantation_type:
+            queryset = queryset.filter(plantation_type=plantation_type)
+
+        #search           
+        if name:
+            queryset = queryset.filter(name__icontains=name)
+        if inn:
+            queryset = queryset.filter(inn=inn)
+
+        return queryset
+
+
+
+
 class PlantationFullListAPIView(generics.ListAPIView):
-    queryset = Plantation.objects.all()
     serializer_class = PlantationDetailSerializer
     pagination_class = PlantationPagination
-    filter_backends = (DjangoFilterBackend, filters.OrderingFilter)
-    filterset_class = PlantationFilter 
+    filter_backends = (filters.OrderingFilter,)  # Убираем DjangoFilterBackend, фильтрация будет вручную
+
+    def get_queryset(self):
+        queryset = Plantation.objects.all()
+
+        # Получаем параметры фильтрации из запроса
+        name = self.request.query_params.get('name', None)
+        inn = self.request.query_params.get('inn', None)
+        region_name = self.request.query_params.get('region_name', None)
+        district_id = self.request.query_params.get('district_id', None)
+        plantation_type = self.request.query_params.get('plantation_type', None)
+        fruit_id = self.request.query_params.get('fruit_id', None)
+        fruit_name = self.request.query_params.get('fruit_name', None)
+        min_area = self.request.query_params.get('min_area', None)
+        max_area = self.request.query_params.get('max_area', None)
+        is_deleting = self.request.query_params.get('is_deleting', None)
+        is_checked = self.request.query_params.get('is_checked', None)
+
+        # Фильтруем по имени
+        if name:
+            queryset = queryset.filter(name__icontains=name)
+
+        # Фильтруем по INN
+        if inn:
+            queryset = queryset.filter(inn=inn)
+
+        # Фильтруем по имени региона
+        if region_name:
+            queryset = queryset.filter(district__region__name__icontains=region_name)
+
+        # Фильтруем по ID района
+        if district_id:
+            queryset = queryset.filter(district__id=district_id)
+
+        # Фильтруем по типу плантации
+        if plantation_type:
+            queryset = queryset.filter(plantation_type=plantation_type)
+
+        # Фильтруем по фруктам
+        if fruit_id:
+            queryset = queryset.filter(fruit_area__fruit__id=fruit_id)
+
+        # Фильтруем по названию фрукта
+        if fruit_name:
+            queryset = queryset.filter(fruit_area__fruit__name__icontains=fruit_name)
+
+        # Фильтруем по минимальной площади
+        if min_area:
+            queryset = queryset.filter(fruit_area__area__gte=min_area)
+
+        # Фильтруем по максимальной площади
+        if max_area:
+            queryset = queryset.filter(fruit_area__area__lte=max_area)
+
+        # Фильтруем по is_deleting
+        if is_deleting:
+            queryset = queryset.filter(is_deleting=is_deleting.lower() == 'true')
+
+        # Фильтруем по is_checked
+        if is_checked:
+            queryset = queryset.filter(is_checked=is_checked.lower() == 'true')
+
+        return queryset
 
     def perform_create(self, serializer):
         serializer.save()
+
 
 
 

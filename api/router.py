@@ -12,6 +12,7 @@ urlpatterns = [
 
     path('plantations/', PlantationListCreateAPIView.as_view(), name='plantation-list-create'),
     path('plantations/full/', PlantationFullListAPIView.as_view(), name='plantation-fulllist-create'),
+    path('plantations/map/', MapPlantationListAPIView.as_view(), name='plantation-map-list'),
     path('plantations/create/', PlantationCreateAPIView.as_view(), name='plantation-create'),
     path('plantations/<int:pk>/', PlantationRetrieveUpdateDestroyAPIView.as_view(), name='plantation-retrieve-update-destroy'),
 
