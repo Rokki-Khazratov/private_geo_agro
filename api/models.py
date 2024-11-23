@@ -1,6 +1,7 @@
 from django.db import models
 from django.utils import timezone  
 from django.contrib.auth.models import User
+from datetime import date
 
 # UTILS 
 class HealthStatus(models.TextChoices):
@@ -27,6 +28,7 @@ class Fruits(models.Model):
 
     def __str__(self):
         return self.name
+
 
 
 class Plantation(models.Model):
@@ -72,10 +74,24 @@ class Plantation(models.Model):
             for field in self._meta.get_fields():
                 if field.concrete and field.name != 'is_checked' and field.name != 'prev_data':
                     # Сравниваем старое значение с новым
-                    if getattr(original, field.name) != getattr(self, field.name):
+                    old_value = getattr(original, field.name)
+                    new_value = getattr(self, field.name)
+
+                    # Для поля district сохраняем только ID, чтобы избежать сериализации объекта
+                    if field.name == 'district':
+                        old_value = old_value.id if old_value else None
+                        new_value = new_value.id if new_value else None
+
+                    # Для полей типа date (например, established_date) преобразуем в строку
+                    if isinstance(old_value, date):
+                        old_value = old_value.strftime('%Y-%m-%d')  # Преобразуем в строку
+                    if isinstance(new_value, date):
+                        new_value = new_value.strftime('%Y-%m-%d')  # Преобразуем в строку
+
+                    if old_value != new_value:
                         changes[field.name] = {
-                            'old': getattr(original, field.name),
-                            'new': getattr(self, field.name)
+                            'old': old_value,
+                            'new': new_value
                         }
 
             # Если изменения есть, сохраняем старые данные
@@ -92,18 +108,28 @@ class Plantation(models.Model):
         """
         print(f"Clearing previous data for Plantation {self.id}...")
         self.prev_data = None  # Очищаем предшествующие данные
-        # Можно добавить дополнительные действия для очистки, если необходимо.
 
     def __str__(self):
         return f"Plantation {self.id}"
 
+
+class FruitVariety(models.Model):
+    fruit = models.ForeignKey(Fruits, on_delete=models.CASCADE, related_name='varieties')
+    name = models.CharField(max_length=250)
+
+    def __str__(self):
+        return f"{self.fruit.name} - {self.name}"
+
 class PlantationFruitArea(models.Model):
     plantation = models.ForeignKey(Plantation, on_delete=models.CASCADE, related_name='fruit_area')
     fruit = models.ForeignKey(Fruits, on_delete=models.CASCADE)
+    variety = models.ForeignKey(FruitVariety, on_delete=models.CASCADE, related_name='fruit_areas', null=True, blank=True)
     area = models.FloatField()  # Площадь, которую занимает данный фрукт в гектар
 
     def __str__(self):
-        return f"{self.fruit.name} area in plantation {self.plantation.id} - {self.area} ha"
+        variety_str = f" ({self.variety.name})" if self.variety else ""
+        return f"{self.fruit.name}{variety_str} area in plantation {self.plantation.id} - {self.area} ha"
+
 
 class PlantationImage(models.Model):
     plantation = models.ForeignKey(Plantation, on_delete=models.CASCADE, related_name='images')

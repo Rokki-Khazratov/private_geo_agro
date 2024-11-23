@@ -21,7 +21,7 @@ class PlantationFruitAreaInline(admin.StackedInline):
     extra = 1  # Добавляем пустое поле для добавления площади фрукта
 
 class PlantationAdmin(admin.ModelAdmin):
-    list_display = ('id', 'name', 'district', 'status', 'is_checked')
+    list_display = ('id', 'name', 'district', 'plantation_type', 'is_checked')
     search_fields = ('name', 'district__name')
     list_filter = ('district', 'status', "is_checked")
     inlines = [PlantationCoordinatesInline, PlantationImageAdmin, PlantationFruitAreaInline]  # Добавляем инлайн для площади фруктов

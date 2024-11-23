@@ -35,21 +35,25 @@ class MapPlantationSerializer(serializers.ModelSerializer):
 
 
 
+
 class PlantationDetailSerializer(serializers.ModelSerializer):
-    district = serializers.SerializerMethodField()  
-    coordinates = serializers.SerializerMethodField()  
-    fruit_areas = serializers.SerializerMethodField()  
-    plantation_type = serializers.CharField(source='get_plantation_type_display')  
+    district = serializers.SerializerMethodField()
+    coordinates = serializers.SerializerMethodField()
+    fruit_areas = serializers.SerializerMethodField()
+    plantation_type = serializers.CharField(source='get_plantation_type_display')
     images = serializers.SerializerMethodField()
     updated_at = serializers.SerializerMethodField()
-    is_deleting = serializers.BooleanField()  # Добавляем поле is_deleting
+    is_deleting = serializers.BooleanField()
+    established_date = serializers.DateField(format='%Y-%m-%d')  # Форматируем дату в строку
 
     class Meta:
         model = Plantation
-        fields = ['id', 'name', 'inn', 'district', 'plantation_type', 'status', 
-                  'established_date', 'total_area', 'is_checked', 'updated_at', 
-                  'coordinates', 'images', 'fruit_areas', 'is_deleting', 'prev_data']
-
+        fields = [
+            'id', 'name', 'inn', 'district', 'plantation_type', 'status', 
+            'established_date', 'total_area', 'is_checked', 
+            'updated_at', 'coordinates', 'images', 'fruit_areas', 'is_deleting', 'prev_data'
+        ]
+    
     def get_district(self, obj):
         return {
             'name': obj.district.name,
@@ -76,23 +80,35 @@ class PlantationDetailSerializer(serializers.ModelSerializer):
 
 
 
+
+
+
+
 class PlantationCoordinatesSerializer(serializers.Serializer):
     latitude = serializers.FloatField()
     longitude = serializers.FloatField()
 
+    
 class PlantationFruitAreaSerializer(serializers.ModelSerializer):
     fruit = serializers.PrimaryKeyRelatedField(queryset=Fruits.objects.all())  # Для связи с фруктами
+    variety = serializers.PrimaryKeyRelatedField(queryset=FruitVariety.objects.all(), required=False)  # Сорт фрукта (опционально)
     area = serializers.FloatField()  # Площадь фрукта
 
     class Meta:
         model = PlantationFruitArea
-        fields = ['fruit', 'area']
+        fields = ['fruit', 'variety', 'area']
+
+
+class FruitVarietySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = FruitVariety
+        fields = ['id', 'name', 'fruit']
 
 
 class PlantationCreateSerializer(serializers.ModelSerializer):
     coordinates = PlantationCoordinatesSerializer(many=True)
     fruit_area = PlantationFruitAreaSerializer(many=True)
-    images = serializers.ListField(child=serializers.CharField())  # Изменено для работы с URL изображений
+    images = serializers.ListField(child=serializers.CharField())  # Работает с URL изображений
 
     class Meta:
         model = Plantation
@@ -120,6 +136,3 @@ class PlantationCreateSerializer(serializers.ModelSerializer):
             PlantationImage.objects.create(plantation=plantation, image=image_url)
 
         return plantation
-
-
-
