@@ -39,7 +39,7 @@ class MapPlantationSerializer(serializers.ModelSerializer):
 class PlantationDetailSerializer(serializers.ModelSerializer):
     district = serializers.SerializerMethodField()
     coordinates = serializers.SerializerMethodField()
-    fruit_areas = serializers.SerializerMethodField()
+    fruit_areas = serializers.SerializerMethodField()  # Обновляем метод для получения фруктовых областей
     plantation_type = serializers.CharField(source='get_plantation_type_display')
     images = serializers.SerializerMethodField()
     updated_at = serializers.SerializerMethodField()
@@ -64,7 +64,14 @@ class PlantationDetailSerializer(serializers.ModelSerializer):
         return [{'latitude': coord.latitude, 'longitude': coord.longitude} for coord in obj.coordinates.all()]
 
     def get_fruit_areas(self, obj):
-        return [{'fruit': fruit.fruit.name, 'area': fruit.area} for fruit in obj.fruit_area.all()]
+        return [
+            {
+                'fruit': fruit.fruit.name,
+                'variety': fruit.variety.name if fruit.variety else None,  # Добавляем сорт фрукта
+                'area': fruit.area
+            } 
+            for fruit in obj.fruit_area.all()
+        ]
 
     def get_images(self, obj):
         return [f"{BASE_URL}{image.image.url}" for image in obj.images.all()]
@@ -88,7 +95,7 @@ class PlantationCoordinatesSerializer(serializers.Serializer):
     latitude = serializers.FloatField()
     longitude = serializers.FloatField()
 
-    
+
 class PlantationFruitAreaSerializer(serializers.ModelSerializer):
     fruit = serializers.PrimaryKeyRelatedField(queryset=Fruits.objects.all())  # Для связи с фруктами
     variety = serializers.PrimaryKeyRelatedField(queryset=FruitVariety.objects.all(), required=False)  # Сорт фрукта (опционально)
