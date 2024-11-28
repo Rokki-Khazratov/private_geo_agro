@@ -11,10 +11,13 @@ from django.contrib.auth import authenticate
 from .models import *
 from .plantations import *
 
+import logging
 
 
 
-class DistrictSerializer(serializers.ModelSerializer):
+
+
+class Districterializer(serializers.ModelSerializer):
     class Meta:
         model = District
         fields = ['id', 'name', 'region']  # Включаем поле 'region' в сериализатор, чтобы его можно было установить
@@ -38,6 +41,10 @@ class StatisticsSerializer(serializers.Serializer):
 
 
 
+
+# Настройка логгера
+logger = logging.getLogger(__name__)
+
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
     @classmethod
     def get_token(cls, user):
@@ -46,16 +53,38 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         return token
 
     def validate(self, attrs):
-        # Аутентифицируем пользователя
+        # Получаем имя пользователя и пароль
         username = attrs.get("username")
         password = attrs.get("password")
 
+        # Логируем попытку аутентификации
+        logger.debug(f"Attempting to authenticate user: {username}")
+
+        # Проверяем, что оба поля (username, password) присутствуют
+        if not username or not password:
+            raise AuthenticationFailed("Both username and password are required")
+
+        # Пробуем аутентифицировать пользователя
         user = authenticate(username=username, password=password)
         
         if user is None:
+            logger.warning(f"Authentication failed for user: {username}")
             raise AuthenticationFailed("Invalid credentials")
 
-        # Обновляем last_login на текущий момент
+        logger.debug(f"Authenticated user: {user.id}")
+
+        # Проверяем, есть ли у пользователя дополнительные обязательные поля
+        missing_fields = []
+        if not user.phone_number:
+            missing_fields.append("phone_number")
+        if not user.district:
+            missing_fields.append("district")
+
+        # Если есть недостающие поля, возвращаем ошибку
+        if missing_fields:
+            raise AuthenticationFailed(f"Missing required fields: {', '.join(missing_fields)}")
+
+        # Обновляем время последнего входа
         user.last_login = timezone.now()
         user.save()
 
@@ -68,13 +97,16 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
 
 
 
+
+
+
 class RegionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Region
         fields = ['id', 'name']
 
 
-class DistrictSerializer(serializers.ModelSerializer):
+class Districterializer(serializers.ModelSerializer):
     region = serializers.PrimaryKeyRelatedField(queryset=Region.objects.all())  # Ожидаем только ID региона
 
     class Meta:
@@ -91,48 +123,57 @@ class UserInfoSerializer(serializers.ModelSerializer):
 
 
 class CustomUserCreateSerializer(serializers.ModelSerializer):
-    districts = serializers.PrimaryKeyRelatedField(queryset=District.objects.all(), many=True)
-    
+    # Теперь это будет работать с одиночным районом, а не с множественными
+    district = serializers.PrimaryKeyRelatedField(queryset=District.objects.all(), required=False)  # Только один район
+
     class Meta:
         model = CustomUser  # Используем кастомную модель
-        fields = ['username', 'first_name', 'last_name', 'phone_number', 'districts']
+        fields = ['username', 'first_name', 'last_name', 'phone_number', 'district']
     
     def create(self, validated_data):
-        districts = validated_data.pop('districts', [])  # Извлекаем округа
+        district = validated_data.pop('district', None)  # Извлекаем район
         user = CustomUser.objects.create_user(**validated_data)  # Создаём пользователя
         
-        user.districts.set(districts)  # Привязываем округа
-        user.save()  # Сохраняем пользователя
+        if district:
+            user.district = district  # Присваиваем район
+            user.save()  # Сохраняем пользователя
         
         return user
 
 
 
 
+from rest_framework import serializers
+from django.utils import timezone
+import pytz
+from django.contrib.auth import get_user_model
+
 class UserSerializer(serializers.ModelSerializer):
-    districts = serializers.SerializerMethodField()  # Для преобразования districts
+    district = serializers.SerializerMethodField()  # Для преобразования district
     region = serializers.SerializerMethodField()  # Для преобразования region
     last_login = serializers.SerializerMethodField()  # Для отображения времени последнего входа с учётом часового пояса
-    phone_number = serializers.SerializerMethodField()  # Для отображения времени последнего входа с учётом часового пояса
+    phone_number = serializers.SerializerMethodField()  # Для отображения номера телефона
 
     class Meta:
         model = get_user_model()
-        fields = ['id', 'username','first_name','last_name','phone_number', 'region', 'districts', 'last_login']
+        fields = ['id', 'username', 'first_name', 'last_name', 'phone_number', 'region', 'district', 'last_login']
 
-    def get_phone_number(self,obj):
+    def get_phone_number(self, obj):
         return obj.phone_number
 
-    def get_districts(self, obj):
+    def get_district(self, obj):
         """
-        Метод для получения только названия округов пользователя
+        Метод для получения названия округа пользователя
         """
-        return [district.name for district in obj.districts.all()]
+        if obj.district:
+            return obj.district.name
+        return None  # Если нет округа, возвращаем None
 
     def get_region(self, obj):
         """
-        Метод для получения только названия региона
+        Метод для получения названия региона
         """
-        district = obj.districts.first()  # Получаем первый округ пользователя
+        district = obj.district  # Получаем округ пользователя
         if district:
             return district.region.name  # Возвращаем название региона
         return None  # Если нет округа, возвращаем None
@@ -149,6 +190,8 @@ class UserSerializer(serializers.ModelSerializer):
             # Форматируем время в строку
             return last_login_time.strftime('%Y-%m-%d %H:%M:%S')
         return None
+
+
 
 class FruitsSerializer(serializers.ModelSerializer):
     class Meta:

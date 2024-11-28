@@ -380,35 +380,56 @@ class PlantationRetrieveUpdateDestroyAPIView(generics.RetrieveUpdateDestroyAPIVi
         # Метод для сохранения объекта
         serializer.save()
 
+
+
+# class PlantationCreateAPIView(APIView):
+#     def post(self, request, *args, **kwargs):
+#         user = request.user
+
+#         if user.district:
+#             print(f"User's district: {user.district.name}")
+#         print(f"Authenticated user: {user.id}")
+        
+#         # Печатаем район пользователя
+#         print(f"User's district: {user.district}")  # Теперь это только один район
+
+#         if not user.district:  # Проверяем, что у пользователя есть хотя бы один район
+#             return Response({"detail": "User must be associated with a district."}, status=status.HTTP_400_BAD_REQUEST)
+
+#         if not user.is_superuser:
+#             # Проверяем, что не пытается изменить 'is_deleting' или 'is_checked'
+#             if 'is_deleting' in request.data or 'is_checked' in request.data:
+#                 return Response({"detail": "Permission denied. Only superusers can modify is_deleting or is_checked."},
+#                                  status=status.HTTP_403_FORBIDDEN)
+
+#         serializer = PlantationCreateSerializer(data=request.data)
+
+#         if serializer.is_valid():
+#             # Присваиваем район пользователя
+#             validated_data = serializer.validated_data
+#             validated_data['district'] = user.district  # Используем район пользователя
+
+#             plantation = serializer.save()  # Создание объекта плантации
+
+#             # Проверяем, что район плантации соответствует району пользователя
+#             if plantation.district != user.district:
+#                 raise PermissionDenied("You do not have permission to create plantations in this district.")
+
+#             return Response(PlantationDetailSerializer(plantation).data, status=status.HTTP_201_CREATED)
+
+#         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
 class PlantationCreateAPIView(APIView):
     def post(self, request, *args, **kwargs):
-        # Получаем токен из заголовков
-        token = request.headers.get('Authorization', None)
-        
-        print(f"Received token: {token}")  # Лог для отслеживания токена
-
-        if not request.user.is_authenticated:
-            print("User is not authenticated")
-            return Response({"detail": "Authentication credentials were not provided."}, status=status.HTTP_401_UNAUTHORIZED)
-
-        user = request.user
-        print(f"Authenticated user: {user}")  # Лог для отслеживания пользователя
-
-        if not user.district:
-            print("User does not belong to a district")
-            return Response({"detail": "User is not assigned to a district."}, status=status.HTTP_400_BAD_REQUEST)
-
-        if not request.user.is_superuser:
-            if 'is_deleting' in request.data or 'is_checked' in request.data:
-                return Response({"detail": "Permission denied. Only superusers can modify is_deleting or is_checked."},
-                                status=status.HTTP_403_FORBIDDEN)
-
-        # Сериализация и создание плантации
-        serializer = PlantationCreateSerializer(data=request.data, context={'request': request})
+        serializer = PlantationCreateSerializer(data=request.data)
 
         if serializer.is_valid():
+
+            # Создание объекта плантации
             plantation = serializer.save()
+
+            # Возвращаем подробности о созданной плантации
             return Response(PlantationDetailSerializer(plantation).data, status=status.HTTP_201_CREATED)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-

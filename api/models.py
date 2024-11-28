@@ -1,7 +1,7 @@
 from django.db import models
 from django.utils import timezone  
-from django.contrib.auth.models import User
 from datetime import date
+from django.contrib.auth.models import AbstractUser
 
 # UTILS 
 class HealthStatus(models.TextChoices):
@@ -148,15 +148,17 @@ class PlantationCoordinates(models.Model):
         return f"Coordinates for Plantation {self.plantation.id}"
 
 # Добавление модели User
-class CustomUser(User):
-    # Заменяем ManyToManyField на ForeignKey
+from django.contrib.auth.models import AbstractUser
+from django.db import models
+
+class CustomUser(AbstractUser):
     district = models.ForeignKey(District, related_name='users', on_delete=models.CASCADE, blank=True, null=True)
     phone_number = models.CharField(max_length=255)
 
     def has_permission_for_plantation(self, plantation):
         """Проверяет, имеет ли пользователь доступ к плантации."""
         return plantation.district == self.district
-        
+
     def has_access_to_district(self, district):
         """
         Проверяет, есть ли у пользователя доступ к конкретному округу.
@@ -164,6 +166,5 @@ class CustomUser(User):
         return district == self.district
 
     def __str__(self):
-        return self.username
-    
+        return self.username   
 
