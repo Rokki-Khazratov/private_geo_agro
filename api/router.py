@@ -19,6 +19,7 @@ urlpatterns = [
     path('districts/create/', create_district, name='create-district'),  # Путь для создания округа
     path('districts/', get_districts, name='get-districts'),  
     path('regions/', get_regions, name='get-regions'),  
+    path('fruits/', get_fruits, name='get-fruits'),  
 
     path('statistics/', StatisticsAPIView.as_view(), name='statistics-for-admin'),
 ]

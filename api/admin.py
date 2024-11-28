@@ -7,9 +7,9 @@ class PlantationCoordinatesInline(admin.StackedInline):
     extra = 1  # Количество пустых полей для добавления координат
 
 class CustomUserAdmin(admin.ModelAdmin):
-    list_display = ('username', 'email', 'is_staff')
+    list_display = ('username', 'email', 'is_staff', 'district')
     search_fields = ('username', 'email')
-    filter_horizontal = ('districts',)
+    # filter_horizontal = ('districts',)  # Только один район
 
 class PlantationImageAdmin(admin.StackedInline):
     model = PlantationImage

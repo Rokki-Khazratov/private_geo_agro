@@ -126,6 +126,21 @@ def get_regions(request):
         serializer = RegionSerializer(regions, many=True)
         return Response(serializer.data)
 
+@api_view(['GET'])
+def get_fruits(request):
+    if request.method == 'GET':
+        fruit_id = request.query_params.get('fruit', None)
+
+        if fruit_id:
+            fruits = FruitVariety.objects.filter(fruit__id=fruit_id)
+        else:
+            fruits = FruitVariety.objects.all()
+
+        serializer = FruitVarietySerializer(fruits, many=True)
+        
+        return Response(serializer.data)
+
+
 
 
 
@@ -216,12 +231,17 @@ class MapPlantationPagination(PageNumberPagination):
 
 
 
-class PlantationListCreateAPIView(generics.ListAPIView):
+class PlantationListCreateAPIView(generics.ListCreateAPIView):
     queryset = Plantation.objects.all()
     serializer_class = PlantationListSerializer
-    pagination_class = PlantationPagination
     filter_backends = (DjangoFilterBackend, filters.OrderingFilter)
     filterset_class = PlantationFilter 
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        district = self.request.user.district
+        return queryset.filter(district=district)  # Отбираем только плантации для района пользователя
+
 
 class MapPlantationListAPIView(generics.ListAPIView):
     serializer_class = MapPlantationSerializer
@@ -360,23 +380,35 @@ class PlantationRetrieveUpdateDestroyAPIView(generics.RetrieveUpdateDestroyAPIVi
         # Метод для сохранения объекта
         serializer.save()
 
-
-
 class PlantationCreateAPIView(APIView):
-    # permission_classes = [permissions.IsAuthenticated]
-
     def post(self, request, *args, **kwargs):
-        print("Received request data:", request.data)  # Отладка: что пришло в запросе
-
-        # Пробуем сериализовать данные
-        serializer = PlantationCreateSerializer(data=request.data)
+        # Получаем токен из заголовков
+        token = request.headers.get('Authorization', None)
         
+        print(f"Received token: {token}")  # Лог для отслеживания токена
+
+        if not request.user.is_authenticated:
+            print("User is not authenticated")
+            return Response({"detail": "Authentication credentials were not provided."}, status=status.HTTP_401_UNAUTHORIZED)
+
+        user = request.user
+        print(f"Authenticated user: {user}")  # Лог для отслеживания пользователя
+
+        if not user.district:
+            print("User does not belong to a district")
+            return Response({"detail": "User is not assigned to a district."}, status=status.HTTP_400_BAD_REQUEST)
+
+        if not request.user.is_superuser:
+            if 'is_deleting' in request.data or 'is_checked' in request.data:
+                return Response({"detail": "Permission denied. Only superusers can modify is_deleting or is_checked."},
+                                status=status.HTTP_403_FORBIDDEN)
+
+        # Сериализация и создание плантации
+        serializer = PlantationCreateSerializer(data=request.data, context={'request': request})
+
         if serializer.is_valid():
-            print("Validated data:", serializer.validated_data)  # Отладка: проверка валидированных данных
             plantation = serializer.save()
             return Response(PlantationDetailSerializer(plantation).data, status=status.HTTP_201_CREATED)
-        
-        # Если невалидно, выводим ошибки
-        print("Errors:", serializer.errors)  # Отладка: вывод ошибок
+
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 

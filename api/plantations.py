@@ -97,19 +97,25 @@ class PlantationCoordinatesSerializer(serializers.Serializer):
 
 
 class PlantationFruitAreaSerializer(serializers.ModelSerializer):
-    fruit = serializers.PrimaryKeyRelatedField(queryset=Fruits.objects.all())  # Для связи с фруктами
-    variety = serializers.PrimaryKeyRelatedField(queryset=FruitVariety.objects.all(), required=False)  # Сорт фрукта (опционально)
+    variety = serializers.PrimaryKeyRelatedField(queryset=FruitVariety.objects.all())  # Только сорт
+    fruit = serializers.SerializerMethodField()  # Определяем фрукт автоматически по variety
     area = serializers.FloatField()  # Площадь фрукта
 
     class Meta:
         model = PlantationFruitArea
         fields = ['fruit', 'variety', 'area']
 
+    def get_fruit(self, obj):
+        """Получаем фрукт через сорт."""
+        return obj.variety.fruit.id if obj.variety else None
+
+
 
 class FruitVarietySerializer(serializers.ModelSerializer):
+    fruit_name = serializers.CharField(source='fruit.name')  # Отображаем имя фрукта, связанного с сортом
     class Meta:
         model = FruitVariety
-        fields = ['id', 'name', 'fruit']
+        fields = ['id', 'name', 'fruit','fruit_name']
 
 
 class PlantationCreateSerializer(serializers.ModelSerializer):
@@ -122,10 +128,22 @@ class PlantationCreateSerializer(serializers.ModelSerializer):
         fields = ['name', 'inn', 'district', 'plantation_type', 'status', 'established_date', 'total_area', 'coordinates', 'fruit_area', 'images']
 
     def create(self, validated_data):
-        # Извлекаем данные из validated_data
+        print(f"Validated data: {validated_data}")  # Лог для отслеживания валидированных данных
+
         coordinates_data = validated_data.pop('coordinates')
         fruit_area_data = validated_data.pop('fruit_area')
         images_data = validated_data.pop('images')
+
+        # Получаем пользователя из контекста запроса
+        user = self.context['request'].user
+        print(f"User: {user}")  # Лог для отслеживания пользователя
+
+        if not user.districts.exists():
+            print("User is not assigned to any district")  # Лог, если у пользователя нет привязанных районов
+            raise serializers.ValidationError("User must be assigned to a district")
+
+        # Привязываем плантацию к району пользователя
+        validated_data['district'] = user.districts.first()  # Привязываем к первому району пользователя
 
         # Создание самой плантации
         plantation = Plantation.objects.create(**validated_data)
@@ -142,4 +160,9 @@ class PlantationCreateSerializer(serializers.ModelSerializer):
         for image_url in images_data:
             PlantationImage.objects.create(plantation=plantation, image=image_url)
 
+        print(f"Created plantation: {plantation}")  # Лог для отслеживания созданной плантации
+
         return plantation
+
+
+
