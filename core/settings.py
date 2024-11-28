@@ -6,11 +6,11 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = os.getenv('DJANGO_SECRET_KEY', 'your_default_secret_key_here')
 
-DEBUG = True
+DEBUG = False
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ["http://206.189.36.11:8017/"]
 
-BASE_URL = 'http://127.0.0.1:8000/'
+BASE_URL = 'http://206.189.36.11:8017/'
 
 INSTALLED_APPS = [
     'django.contrib.admin',
