@@ -6,11 +6,11 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = os.getenv('DJANGO_SECRET_KEY', 'your_default_secret_key_here')
 
-DEBUG = False
+DEBUG = True
 
-ALLOWED_HOSTS = ["http://206.189.36.11:8017/"]
+ALLOWED_HOSTS = []
 
-BASE_URL = 'http://206.189.36.11:8017/'
+BASE_URL = 'http://127.0.0.1:8000/'
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -81,8 +81,10 @@ AUTH_PASSWORD_VALIDATORS = [
 # }
 
 SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(days=15),
-    'REFRESH_TOKEN_LIFETIME': timedelta(days=30),
+    # 'ACCESS_TOKEN_LIFETIME': timedelta(days=15),
+    # 'REFRESH_TOKEN_LIFETIME': timedelta(days=30),
+    'ACCESS_TOKEN_LIFETIME': timedelta(days=300),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=300),
     'ROTATE_REFRESH_TOKENS': False,
     'BLACKLIST_AFTER_ROTATION': True,
     'ALGORITHM': 'HS256',

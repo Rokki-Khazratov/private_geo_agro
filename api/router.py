@@ -10,7 +10,7 @@ urlpatterns = [
     path('users/<int:pk>/', UserDetailAPIView.as_view(), name='user-detail'), 
     path('users/create/', create_user, name='create-user'),
 
-    path('plantations/', PlantationListCreateAPIView.as_view(), name='plantation-list-create'),
+    path('plantations/', PlantationListAPIView.as_view(), name='plantation-list'),
     path('plantations/full/', PlantationFullListAPIView.as_view(), name='plantation-fulllist-create'),
     path('plantations/map/', MapPlantationListAPIView.as_view(), name='plantation-map-list'),
     path('plantations/create/', PlantationCreateAPIView.as_view(), name='plantation-create'),

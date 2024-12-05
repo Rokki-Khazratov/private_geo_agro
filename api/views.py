@@ -231,7 +231,7 @@ class MapPlantationPagination(PageNumberPagination):
 
 
 
-class PlantationListCreateAPIView(generics.ListCreateAPIView):
+class PlantationListAPIView(generics.ListAPIView):
     queryset = Plantation.objects.all()
     serializer_class = PlantationListSerializer
     filter_backends = (DjangoFilterBackend, filters.OrderingFilter)
@@ -239,8 +239,7 @@ class PlantationListCreateAPIView(generics.ListCreateAPIView):
 
     def get_queryset(self):
         queryset = super().get_queryset()
-        district = self.request.user.district
-        return queryset.filter(district=district)  # Отбираем только плантации для района пользователя
+        return queryset
 
 
 class MapPlantationListAPIView(generics.ListAPIView):
@@ -280,7 +279,7 @@ class MapPlantationListAPIView(generics.ListAPIView):
 class PlantationFullListAPIView(generics.ListAPIView):
     serializer_class = PlantationDetailSerializer
     pagination_class = PlantationPagination
-    filter_backends = (filters.OrderingFilter,)  # Убираем DjangoFilterBackend, фильтрация будет вручную
+    filter_backends = (filters.OrderingFilter,)
 
     def get_queryset(self):
         queryset = Plantation.objects.all()

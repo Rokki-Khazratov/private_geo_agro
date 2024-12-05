@@ -19,7 +19,7 @@ class PlantationListSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Plantation
-        fields = ['id', 'name', 'inn', 'district', 'plantation_type', 'status', 'established_date', 'is_checked', 'is_deleting']
+        fields = ['id', 'name', 'inn', 'district', 'plantation_type', 'status', 'established_date', 'is_checked', 'is_deleting','prev_data']
 
 class MapPlantationSerializer(serializers.ModelSerializer):
     district = serializers.CharField(source='district.name')
