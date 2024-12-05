@@ -250,7 +250,7 @@ class MapPlantationListAPIView(generics.ListAPIView):
         queryset = Plantation.objects.all()
         status = self.request.query_params.get('status', None)
         region_name = self.request.query_params.get('region', None)
-        district_id = self.request.query_params.get('district', None)
+        district_id = self.request.query_params.get('district_id', None)
         name = self.request.query_params.get('name', None)
         inn = self.request.query_params.get('inn', None)
         plantation_type = self.request.query_params.get('plantation_type', None)
