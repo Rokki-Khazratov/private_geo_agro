@@ -27,7 +27,7 @@ class MapPlantationSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Plantation
-        fields = ['id', 'name', 'district', 'coordinates']
+        fields = ['id', 'name', 'district', 'coordinates','status']
 
     def get_coordinates(self, obj):
         coordinates = obj.coordinates.all()
