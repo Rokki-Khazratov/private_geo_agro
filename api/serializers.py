@@ -17,7 +17,7 @@ import logging
 
 
 
-class Districterializer(serializers.ModelSerializer):
+class DistrictSerializer(serializers.ModelSerializer):
     class Meta:
         model = District
         fields = ['id', 'name', 'region']  # Включаем поле 'region' в сериализатор, чтобы его можно было установить
